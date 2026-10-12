@@ -1,7 +1,8 @@
 # Game models
 
 Free, animated 3D characters for the games (Lakeside, Wayfarer, the Unity pilot), converted to GLB and
-shrunk for phones. All of it is CC0 (public domain). Open `index.html` to look at everything:
+shrunk for phones. All of it is CC0 (public domain). To look at everything, open https://nolimitnexus.github.io/game-models/
+or double-click `Open Model Lab.cmd` (it starts a small local server; the page cannot run from a plain file):
 pick a pack, a character, hair and an animation, or press **Lineup** to see a whole pack side by side.
 
 ## The two options

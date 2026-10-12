@@ -97,6 +97,13 @@
       <p class="note">All models here are CC0 (public domain): Quaternius and Kay Lousberg (KayKit). They were converted to GLB and shrunk for the web. Drag to orbit, pinch or scroll to zoom.</p>
     </section>
   </aside>
+  <script>
+    // Opened by double-clicking the file: browsers block modules and model loading from file://
+    if (location.protocol === 'file:') {
+      document.getElementById('stats').textContent =
+        'This page cannot run from a file. Double-click "Open Model Lab.cmd" in this folder, or open https://nolimitnexus.github.io/game-models/';
+    }
+  </script>
   <script type="module" src="viewer.js"></script>
 </body>
 </html>
