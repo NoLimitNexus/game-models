@@ -519,7 +519,9 @@ PARTS = {
 DEFAULT_COLORS = {'hat_straw': {'hat': '#d9b866'}, 'hat_cap': {'hat': '#5b6b8a'}, 'hat_beanie': {'hat': '#b8452e', 'hatband': '#f6f1e6'}}
 
 
-# ---------------------------------------------------------------- tools (Y up in the game: handle along +Z here; the edge side is -X)
+# ---------------------------------------------------------------- tools (Y up in the game: handle along +Z here; the edge side is +X)
+# (+X leads: KayKit's Chopping clip swings the head forward and down with the tool's +X in front, so an edge on +X strikes first;
+#  measured 2026-10-12 after the owner saw the axe blade backwards in the game.)
 def handle(z0, z1, r0, r1):
     return tube([(0, 0, z0), (0, 0, (z0 + z1) / 2), (0, 0, z1)], [r0, (r0 + r1) / 2, r1], segs=10, cap_rings=2)
 
@@ -527,8 +529,8 @@ def handle(z0, z1, r0, r1):
 def t_axe(kit):
     kit.add('wood', 'wood', None, handle(-0.27, 0.86, 0.036, 0.03))
     kit.add('wood', 'cork', None, tube([(0, 0, -0.1), (0, 0, 0.2)], [0.042, 0.042], segs=10, cap_rings=2))
-    poly = [(0.13, 0.62), (0.13, 0.92), (0.02, 0.97), (-0.3, 1.07), (-0.58, 1.12), (-0.63, 0.74), (-0.3, 0.64), (0.02, 0.66)]
-    kit.add('steel', 'steel', None, prism(poly, lambda x, z: 0.035 if x > -0.22 else max(0.008, 0.035 - 0.027 * (-0.22 - x) / 0.4)), smooth=False)
+    poly = [(-0.13, 0.62), (-0.13, 0.92), (-0.02, 0.97), (0.3, 1.07), (0.58, 1.12), (0.63, 0.74), (0.3, 0.64), (-0.02, 0.66)]
+    kit.add('steel', 'steel', None, prism(poly, lambda x, z: 0.035 if x < 0.22 else max(0.008, 0.035 - 0.027 * (x - 0.22) / 0.4)), smooth=False)
     kit.add('steeldark', 'steeldark', None, tube([(0, 0, 0.6), (0, 0, 1.0)], [0.052, 0.052], segs=8, caps=(True, True), cap_rings=1))
 
 
