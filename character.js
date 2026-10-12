@@ -134,6 +134,7 @@ export class Character {
     this.colors = {};               // material name -> hex (overrides only)
     this.tool = null;
     this._slotMeshes = {};          // slot -> [SkinnedMesh]
+    this._requests = {};            // slot (or 'tool') -> number of the newest request for it
     this._toolRoot = null;
     this._mats = new Map();         // material name -> Set(Material)
     this._clipCache = new Map();
@@ -160,6 +161,11 @@ export class Character {
     });
     this.mixer = new THREE.AnimationMixer(this.root);
   }
+
+  /** A new request for a slot: every older one for it is now out of date. */
+  _ask(slot) { return (this._requests[slot] = (this._requests[slot] || 0) + 1); }
+  /** Is this still the newest request for the slot? */
+  _latest(slot, n) { return this._requests[slot] === n; }
 
   /** Give this character its own copy of a material so recoloring never touches another character. */
   _own(material) {
@@ -203,15 +209,22 @@ export class Character {
     return '#' + [...set][0].color.getHexString();
   }
 
+  /**
+   * Wear this part in the slot (null takes it off). The newest request for a slot always wins: a part takes time to load, and
+   * if the look changes again meanwhile (a hat asked for, then taken off, on a slow phone), the older load must not land
+   * afterwards, or the hat would stay on, or two hats would be worn at once.
+   */
   async setPart(slot, id) {
+    const mine = this._ask(slot);
     if ((this.parts[slot] || null) === (id || null) && (id === null || this._slotMeshes[slot])) return;
     for (const m of this._slotMeshes[slot] || []) { m.removeFromParent(); this._release(m); }
     delete this._slotMeshes[slot];
-    if (!id) { delete this.parts[slot]; this._hide(); return; }
+    delete this.parts[slot];
+    if (!id) { this._hide(); return; }
     const def = this.lib.part(id);
-    if (!def) { console.warn('Unknown part, skipped:', id); delete this.parts[slot]; this._hide(); return; }
+    if (!def) { console.warn('Unknown part, skipped:', id); this._hide(); return; }
     const gltf = await this.lib.glb(def.url);
-    if ((this.parts[slot] || null) === id && this._slotMeshes[slot]) return; // a faster call already did it
+    if (!this._latest(slot, mine)) return; // something newer was asked for while this was loading: it wins
     const made = [];
     gltf.scene.traverse((o) => {
       if (!o.isSkinnedMesh) return;
@@ -237,13 +250,14 @@ export class Character {
   }
 
   async setTool(id) {
+    const mine = this._ask('tool'); // the newest request wins, as for parts
     if (this._toolRoot) { this._toolRoot.removeFromParent(); this._release(this._toolRoot); this._toolRoot = null; }
     this.tool = id || null;
     if (!id) return;
     const def = this.lib.tool(id);
     if (!def) { console.warn('Unknown tool, skipped:', id); this.tool = null; return; }
     const gltf = await this.lib.glb(def.url);
-    if (this.tool !== id) return;
+    if (!this._latest('tool', mine)) return;
     const root = SkeletonUtils.clone(gltf.scene);
     root.scale.setScalar(def.scale || 1);
     root.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.material = this._own(o.material); } });
