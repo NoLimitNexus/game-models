@@ -81,6 +81,36 @@ export async function catalogFromFiles(baseUrl) {
   };
 }
 
+/**
+ * Builds the same catalog from rows of the `game_models` database collection (see Wayfarer's server/setup-models.mjs):
+ * one row per body, part, tool, animation file, preset, plus one 'roles' row. `api` is the PocketBase address; a row's file
+ * is served from <api>/api/files/game_models/<id>/<file>. Returns null when the database has no body yet.
+ */
+export function catalogFromRecords(records, api) {
+  const file = (r) => `${api.replace(/\/$/, '')}/api/files/game_models/${r.id}/${r.file}`;
+  const on = (kind) => records
+    .filter((r) => r.kind === kind && r.enabled !== false && (kind === 'roles' || r.file || kind === 'preset'))
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0) || String(a.key).localeCompare(String(b.key)));
+  const id = (r, prefix) => (r.data && r.data.id) || String(r.key).replace(prefix, '');
+  const body = on('body')[0];
+  if (!body) return null;
+  return {
+    baseUrl: '',
+    source: 'database',
+    base: { url: file(body) },
+    parts: on('part').map((r) => ({
+      id: id(r, 'part:'), slot: r.slot, name: r.name, hides: (r.data && r.data.hides) || [], materials: (r.data && r.data.materials) || {},
+      tris: r.data && r.data.tris, url: file(r), tier: r.tier || 'free', price: r.price || 0, enabled: true, record: r.id,
+    })),
+    tools: on('tool').map((r) => ({
+      id: id(r, 'tool:'), name: r.name, url: file(r), bone: (r.data && r.data.bone) || 'handslot.r', scale: (r.data && r.data.scale) || 1,
+      tier: r.tier || 'free', price: r.price || 0, record: r.id,
+    })),
+    animations: on('animation').map((r) => ({ id: id(r, 'anim:'), group: (r.data && r.data.group) || r.name, url: file(r), record: r.id })),
+    roles: (records.find((r) => r.kind === 'roles' && r.enabled !== false) || {}).data || {},
+    presets: on('preset').map((r) => ({ id: id(r, 'preset:'), name: r.name, appearance: (r.data && r.data.appearance) || {}, tier: r.tier || 'free', record: r.id })),
+  };
+}
 const sanitize = (n) => n.replace(/\s/g, '_').replace(/[[\].:/]/g, '');
 
 export class Character {
@@ -128,6 +158,7 @@ export class Character {
   /** Give this character its own copy of a material so recoloring never touches another character. */
   _own(material) {
     const m = material.clone();
+    m.userData.baseColor = m.color.clone();   // what the part ships with, to go back to
     if (!this._mats.has(m.name)) this._mats.set(m.name, new Set());
     this._mats.get(m.name).add(m);
     if (this.colors[m.name]) m.color.set(this.colors[m.name]);
@@ -145,6 +176,7 @@ export class Character {
 
   async apply(a) {
     const next = { ...DEFAULT_APPEARANCE, ...a, parts: { ...(a && a.parts) } };
+    for (const k of Object.keys(this.colors)) if (!(next.colors && k in next.colors)) this.setColor(k, null);   // back to each part's own color
     for (const [k, v] of Object.entries(next.colors || {})) this.setColor(k, v);
     const slots = new Set([...SLOTS.map((s) => s.id), ...Object.keys(this.parts)]);
     await Promise.all([...slots].map((s) => this.setPart(s, next.parts[s] || null)));
@@ -155,7 +187,7 @@ export class Character {
   setColor(key, hex) {
     if (hex) this.colors[key] = hex; else delete this.colors[key];
     const set = this._mats.get(key);
-    if (set && hex) for (const m of set) m.color.set(hex);
+    if (set) for (const m of set) { if (hex) m.color.set(hex); else if (m.userData.baseColor) m.color.copy(m.userData.baseColor); }
   }
 
   /** The color a material shows right now (a hex string), for the Looks screen's pickers. */
