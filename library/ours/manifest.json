@@ -1,0 +1,351 @@
+{
+ "body": {
+  "id": "Body",
+  "file": "body/Body.glb",
+  "tris": 6648,
+  "materials": {
+   "skin": "#f0c8a0",
+   "eyes": "#241a14",
+   "eyeshine": "#ffffff",
+   "hair": "#5b3a22",
+   "mouth": "#a5483a"
+  },
+  "meshes": [
+   "face_brows",
+   "face_eyes",
+   "face_eyeshine",
+   "face_mouth",
+   "skin_armLowerL",
+   "skin_armLowerR",
+   "skin_armUpperL",
+   "skin_armUpperR",
+   "skin_footL",
+   "skin_footR",
+   "skin_handL",
+   "skin_handR",
+   "skin_head",
+   "skin_legLowerL",
+   "skin_legLowerR",
+   "skin_legUpperL",
+   "skin_legUpperR",
+   "skin_torso"
+  ]
+ },
+ "parts": [
+  {
+   "id": "hair_short",
+   "slot": "hair",
+   "name": "Short hair",
+   "hides": [],
+   "file": "parts/hair_short.glb",
+   "tris": 1660,
+   "materials": {
+    "hair": "#5b3a22"
+   }
+  },
+  {
+   "id": "hair_tousled",
+   "slot": "hair",
+   "name": "Tousled hair",
+   "hides": [],
+   "file": "parts/hair_tousled.glb",
+   "tris": 2160,
+   "materials": {
+    "hair": "#5b3a22"
+   }
+  },
+  {
+   "id": "hair_long",
+   "slot": "hair",
+   "name": "Long hair",
+   "hides": [],
+   "file": "parts/hair_long.glb",
+   "tris": 2392,
+   "materials": {
+    "hair": "#5b3a22"
+   }
+  },
+  {
+   "id": "hair_bun",
+   "slot": "hair",
+   "name": "Hair bun",
+   "hides": [],
+   "file": "parts/hair_bun.glb",
+   "tris": 1884,
+   "materials": {
+    "hair": "#5b3a22"
+   }
+  },
+  {
+   "id": "hair_ponytail",
+   "slot": "hair",
+   "name": "Ponytail",
+   "hides": [],
+   "file": "parts/hair_ponytail.glb",
+   "tris": 1940,
+   "materials": {
+    "hair": "#5b3a22"
+   }
+  },
+  {
+   "id": "hair_balding",
+   "slot": "hair",
+   "name": "Balding",
+   "hides": [],
+   "file": "parts/hair_balding.glb",
+   "tris": 1230,
+   "materials": {
+    "hair": "#5b3a22"
+   }
+  },
+  {
+   "id": "beard_short",
+   "slot": "beard",
+   "name": "Short beard",
+   "hides": [],
+   "file": "parts/beard_short.glb",
+   "tris": 500,
+   "materials": {
+    "hair": "#5b3a22"
+   }
+  },
+  {
+   "id": "beard_long",
+   "slot": "beard",
+   "name": "Long beard",
+   "hides": [],
+   "file": "parts/beard_long.glb",
+   "tris": 852,
+   "materials": {
+    "hair": "#5b3a22"
+   }
+  },
+  {
+   "id": "top_tee",
+   "slot": "top",
+   "name": "T-shirt",
+   "hides": [
+    "skin_torso",
+    "skin_armUpperL",
+    "skin_armUpperR"
+   ],
+   "file": "parts/top_tee.glb",
+   "tris": 1552,
+   "materials": {
+    "shirt": "#d9673d",
+    "linen": "#f6f1e6"
+   }
+  },
+  {
+   "id": "top_long",
+   "slot": "top",
+   "name": "Long sleeves",
+   "hides": [
+    "skin_torso",
+    "skin_armUpperL",
+    "skin_armUpperR",
+    "skin_armLowerL",
+    "skin_armLowerR"
+   ],
+   "file": "parts/top_long.glb",
+   "tris": 1664,
+   "materials": {
+    "shirt": "#d9673d",
+    "linen": "#f6f1e6"
+   }
+  },
+  {
+   "id": "top_tunic",
+   "slot": "top",
+   "name": "Tunic",
+   "hides": [
+    "skin_torso",
+    "skin_armUpperL",
+    "skin_armUpperR",
+    "skin_armLowerL",
+    "skin_armLowerR"
+   ],
+   "file": "parts/top_tunic.glb",
+   "tris": 1808,
+   "materials": {
+    "shirt": "#d9673d",
+    "linen": "#f6f1e6",
+    "belt": "#6b4a30"
+   }
+  },
+  {
+   "id": "bottom_trousers",
+   "slot": "bottom",
+   "name": "Trousers",
+   "hides": [
+    "skin_legUpperL",
+    "skin_legUpperR",
+    "skin_legLowerL",
+    "skin_legLowerR"
+   ],
+   "file": "parts/bottom_trousers.glb",
+   "tris": 1044,
+   "materials": {
+    "trousers": "#3d4250",
+    "belt": "#6b4a30"
+   }
+  },
+  {
+   "id": "bottom_shorts",
+   "slot": "bottom",
+   "name": "Shorts",
+   "hides": [
+    "skin_legUpperL",
+    "skin_legUpperR"
+   ],
+   "file": "parts/bottom_shorts.glb",
+   "tris": 932,
+   "materials": {
+    "trousers": "#3d4250",
+    "belt": "#6b4a30"
+   }
+  },
+  {
+   "id": "boots_tall",
+   "slot": "boots",
+   "name": "Tall boots",
+   "hides": [
+    "skin_footL",
+    "skin_footR"
+   ],
+   "file": "parts/boots_tall.glb",
+   "tris": 744,
+   "materials": {
+    "boots": "#3a2a20",
+    "linen": "#f6f1e6"
+   }
+  },
+  {
+   "id": "boots_low",
+   "slot": "boots",
+   "name": "Shoes",
+   "hides": [
+    "skin_footL",
+    "skin_footR"
+   ],
+   "file": "parts/boots_low.glb",
+   "tris": 632,
+   "materials": {
+    "boots": "#3a2a20"
+   }
+  },
+  {
+   "id": "hat_straw",
+   "slot": "hat",
+   "name": "Straw hat",
+   "hides": [],
+   "file": "parts/hat_straw.glb",
+   "tris": 970,
+   "materials": {
+    "hat": "#d9b866",
+    "hatband": "#8a3a2a"
+   }
+  },
+  {
+   "id": "hat_cap",
+   "slot": "hat",
+   "name": "Flat cap",
+   "hides": [],
+   "file": "parts/hat_cap.glb",
+   "tris": 684,
+   "materials": {
+    "hat": "#5b6b8a"
+   }
+  },
+  {
+   "id": "hat_beanie",
+   "slot": "hat",
+   "name": "Beanie",
+   "hides": [],
+   "file": "parts/hat_beanie.glb",
+   "tris": 744,
+   "materials": {
+    "hat": "#b8452e",
+    "hatband": "#f6f1e6"
+   }
+  },
+  {
+   "id": "back_pack",
+   "slot": "back",
+   "name": "Backpack",
+   "hides": [],
+   "file": "parts/back_pack.glb",
+   "tris": 1024,
+   "materials": {
+    "pack": "#7a5a36"
+   }
+  }
+ ],
+ "tools": [
+  {
+   "id": "axe",
+   "name": "Axe",
+   "file": "tools/axe.glb",
+   "tris": 352,
+   "materials": {
+    "wood": "#7a5230",
+    "steel": "#9aa3ad",
+    "steeldark": "#5d6470"
+   },
+   "bone": "handslot.r",
+   "scale": 1.2
+  },
+  {
+   "id": "pickaxe",
+   "name": "Pickaxe",
+   "file": "tools/pickaxe.glb",
+   "tris": 504,
+   "materials": {
+    "wood": "#7a5230",
+    "steel": "#9aa3ad",
+    "steeldark": "#5d6470"
+   },
+   "bone": "handslot.r",
+   "scale": 1.2
+  },
+  {
+   "id": "hammer",
+   "name": "Hammer",
+   "file": "tools/hammer.glb",
+   "tris": 656,
+   "materials": {
+    "wood": "#7a5230",
+    "steel": "#9aa3ad",
+    "steeldark": "#5d6470"
+   },
+   "bone": "handslot.r",
+   "scale": 1.2
+  },
+  {
+   "id": "net",
+   "name": "Fishing net",
+   "file": "tools/net.glb",
+   "tris": 1356,
+   "materials": {
+    "wood": "#7a5230",
+    "rope": "#d8c08a"
+   },
+   "bone": "handslot.r",
+   "scale": 1.15
+  },
+  {
+   "id": "rod",
+   "name": "Fishing rod",
+   "file": "tools/rod.glb",
+   "tris": 400,
+   "materials": {
+    "cork": "#b88a55",
+    "wood": "#7a5230",
+    "steeldark": "#5d6470",
+    "brass": "#c9a24a"
+   },
+   "bone": "handslot.r",
+   "scale": 1.1
+  }
+ ]
+}

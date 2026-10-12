@@ -1,0 +1,25 @@
+{
+  "presets": [
+    { "id": "islander", "name": "Islander",
+      "appearance": { "parts": { "hair": "hair_short", "top": "top_tee", "bottom": "bottom_trousers", "boots": "boots_tall" },
+        "colors": { "skin": "#f0c8a0", "hair": "#5b3a22", "shirt": "#d9673d", "trousers": "#3d4250", "boots": "#3a2a20", "belt": "#6b4a30", "linen": "#f6f1e6" } } },
+    { "id": "farmer", "name": "Farmer",
+      "appearance": { "parts": { "hair": "hair_tousled", "top": "top_long", "bottom": "bottom_trousers", "boots": "boots_low", "hat": "hat_straw" },
+        "colors": { "skin": "#e2b48a", "hair": "#a06a2c", "shirt": "#6a9a4c", "trousers": "#6b5236", "boots": "#3a2a20", "belt": "#8a6a3a", "linen": "#f1e6c9" } } },
+    { "id": "angler", "name": "Angler",
+      "appearance": { "parts": { "hair": "hair_ponytail", "top": "top_tee", "bottom": "bottom_shorts", "boots": "boots_low", "hat": "hat_cap" },
+        "colors": { "skin": "#c68e63", "hair": "#2b2626", "shirt": "#3f7ca8", "trousers": "#c9b48a", "boots": "#4a3a2a", "belt": "#6b4a30", "hat": "#2f4a68" } } },
+    { "id": "cook", "name": "Cook",
+      "appearance": { "parts": { "hair": "hair_bun", "top": "top_long", "bottom": "bottom_trousers", "boots": "boots_low" },
+        "colors": { "skin": "#f0c8a0", "hair": "#7a3b1e", "shirt": "#f3eee2", "trousers": "#4a4f5c", "boots": "#2f2a28", "belt": "#b8452e", "linen": "#c9473a" } } },
+    { "id": "smith", "name": "Smith",
+      "appearance": { "parts": { "hair": "hair_balding", "beard": "beard_short", "top": "top_tee", "bottom": "bottom_trousers", "boots": "boots_tall" },
+        "colors": { "skin": "#b97d52", "hair": "#2a2220", "shirt": "#55545c", "trousers": "#2f3138", "boots": "#2a2220", "belt": "#7a5a36", "linen": "#8a8a90" } } },
+    { "id": "miner", "name": "Miner",
+      "appearance": { "parts": { "hair": "hair_tousled", "top": "top_long", "bottom": "bottom_trousers", "boots": "boots_tall", "hat": "hat_cap", "back": "back_pack" },
+        "colors": { "skin": "#e8b98f", "hair": "#3a2a20", "shirt": "#8a6a3a", "trousers": "#4a4538", "boots": "#2a2220", "hat": "#d9a23a", "belt": "#5a4630" } } },
+    { "id": "old-man", "name": "The old man",
+      "appearance": { "parts": { "hair": "hair_balding", "beard": "beard_long", "top": "top_tunic", "bottom": "bottom_trousers", "boots": "boots_low" },
+        "colors": { "skin": "#dcb08c", "hair": "#e8e4dc", "shirt": "#7a5a3a", "trousers": "#4a4038", "boots": "#3a2a20", "belt": "#5a4630", "linen": "#d8cba8" } } }
+  ]
+}

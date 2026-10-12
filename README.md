@@ -1,110 +1,71 @@
 # Game models
 
-Free, animated 3D characters for the games (Lakeside, Wayfarer, the Unity pilot), converted to GLB and
-shrunk for phones. All of it is CC0 (public domain). To look at everything, open https://nolimitnexus.github.io/game-models/
-or double-click `Open Model Lab.cmd` (it starts a small local server; the page cannot run from a plain file):
-pick a pack, a character, hair and an animation, or press **Lineup** to see a whole pack side by side.
+Our own animated characters for the games (Wayfarer first, then Lakeside and the rest). A character is a **body kit**: a
+bare body plus swappable parts (hair, beard, hat, top, bottom, boots, backpack) and tools in the hand, all built on one
+skeleton so every animation plays on every mix of parts.
 
-## The two options
+- **Look at everything:** https://nolimitnexus.github.io/game-models/ (or double-click `Open Model Lab.cmd` for a local copy;
+  the page cannot run from a plain file). Pick a character, swap parts, recolor, put a tool in the hand, play any animation.
+- Everything in `library/ours` is ours: made by `tools/bl_make_kit.py`, no third-party meshes.
+- The animation clips in `library/animations` are KayKit's (CC0, Kay Lousberg), kept as the shared set until we author our own.
+  The skeleton is KayKit's `Rig_Medium` (that is what lets us use all 132 of them); `licenses/` has the license text.
+- KayKit's classic characters (Knight, Barbarian, Mage, Ranger...) are the quality benchmark: on this PC only, in the
+  git-ignored `reference/kaykit`, never published. The lab shows them under "Reference" when run locally.
 
-| | Quaternius | KayKit |
-|---|---|---|
-| Look | Realistic-stylized, readable up close | Chunky low-poly, reads well from the high game view |
-| Characters | Superhero M/F, Peasant M/F, Ranger M/F, 6 hairstyles, 6 hair colors | Knight, Barbarian, Mage, Ranger, Rogue, Rogue Hooded |
-| Size | about 14,000 triangles, 65 bones (fingers), 1024 px PBR textures, 2 to 8 MB each | about 6,000 triangles, 23 bones, one palette texture, under 0.5 MB each |
-| Animations | 45 (walk, run, sword, spell, sit, swim, dance...) | 132 (movement, melee, ranged, sitting, plus a full fishing set, chopping, digging, pickaxe, hammering, sawing) |
-
-## The one rule that makes this work
-
-**One rig per pack.** Every animation of a pack plays on every character of that pack, because clips find
-their bones by name. No retargeting. Mixing packs is the thing to avoid.
-
-- Quaternius rig: `root, pelvis, spine_01..03, neck_01, Head, clavicle_l, upperarm_l, ...` (65 bones, Unreal naming)
-- KayKit rig: `root, hips, spine, chest, upperarm.l, lowerarm.l, wrist.l, hand.l, handslot.l, head, ...` (23 bones)
-
-Hair and heads are separate skinned meshes on the same rig, so they attach to any body in the pack
-(see `attachParts` in `viewer.js`). The free outfit pieces come without a head; `library/quaternius/heads`
-holds the head cut from the Superhero bodies, which is what the outfit pack's own readme says to use.
-
-## Layout
+## The kit
 
 ```
-library/quaternius/{characters,outfits,heads,hair,animations}/*.glb
-library/kaykit/{characters,animations}/*.glb
-library/ours/characters/*.glb   our own characters on the KayKit skeleton
-characters/*.json      the specs those are built from
-licenses/            the license text shipped with each pack
-index.html, viewer.js   the viewer (Three.js 0.170, no build step)
-tools/               fetch-packs.ps1, build-library.ps1, bl_convert.py, bl_make_character.py (Blender, headless), serve.mjs, inspect-gltf.mjs
+library/ours/body/Body.glb       the bare body: one skin mesh per region (head, torso, arms, hands, legs, feet) plus the face
+library/ours/parts/<id>.glb      19 parts: hair (6), beard (2), top (3), bottom (2), boots (2), hat (3), backpack
+library/ours/tools/<id>.glb      axe, pickaxe, hammer, net, rod (handle along +Y, origin at the grip)
+library/ours/manifest.json       every file with its slot, the skin regions it hides, its materials and default colors
+library/ours/presets.json        named looks (Islander, Farmer, Angler, Cook, Smith, Miner, The old man)
+library/animations/*.glb         the clips (animation only); roles.json maps game words (walk, chop, fish...) to clips
 ```
 
-`downloads/` and `extracted/` (the original packs, about 1 GB) are not in git; `tools\fetch-packs.ps1`
-brings them back and `tools\build-library.ps1` rebuilds `library/` from them (Blender 5.x from the Store).
+A part is a skinned shell on the same 23-bone skeleton. Wearing one hides the skin regions it covers (`hides` in the
+manifest), so nothing is drawn twice. Every part uses named materials (`skin shirt trousers boots belt linen hair hat
+hatband pack eyes mouth`), so a game recolors a part by material name; that is the whole customization system.
 
-## Using a character in Three.js
+`character.js` assembles a character from these files (no DOM in it; the lab, the game and the admin pages all use it):
 
 ```js
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-
-const loader = new GLTFLoader();
-const body = await loader.loadAsync('library/kaykit/characters/Knight.glb');
-const anims = await loader.loadAsync('library/kaykit/animations/Rig_Medium_MovementBasic.glb');
-
-const knight = SkeletonUtils.clone(body.scene);          // clone() per islander, they share geometry
-const mixer = new THREE.AnimationMixer(knight);
-mixer.clipAction(THREE.AnimationClip.findByName(anims.animations, 'Walking_A')).play();
-// each frame: mixer.update(dt)
+const lib = new Library(await catalogFromFiles('/'));
+const c = await Character.create(lib, { parts: { hair: 'hair_long', top: 'top_tee' }, colors: { shirt: '#3f7ca8' }, tool: 'axe' });
+scene.add(c.holder);  c.setHeight(1.5);  c.playRole('chop');   // each frame: c.update(dt)
 ```
 
-Clips from a finger-bone-rich rig may name bones a character lacks; `clipFor` in `viewer.js` drops those
-tracks so the console stays quiet.
+Roles in use by the games: `idle walk run chop mine hammer saw dig fish fish_cast fish_reel fish_catch cook craft pickup
+interact use cheer wave sit hit` (see `library/animations/roles.json`). Bones are named `head`, `handslotl`, `handslotr`
+(Three.js strips dots), which is where hats and tools attach.
 
-## Our own characters (built on the KayKit skeleton)
+## Making and changing things
 
-KayKit is the one we are building on. `characters/*.json` + `tools/bl_make_character.py` make our own
-characters that use KayKit's exact skeleton, so **all 132 KayKit animations play on them unchanged**.
-Five exist: Islander (Lakeside's colors), Farmer, Angler, Cook, Smith (4,000 to 5,400 triangles,
-130 to 170 KB each, no textures, 10 materials).
+Everything is built by `tools/bl_make_kit.py` (headless Blender; no window opens). Shapes are a few numbers each:
 
-A spec is a few lines:
+- **A new part:** write a `p_<name>(kit)` function (see `p_hair_short`, `p_top_tee`), add it to `PARTS` with its slot and the
+  skin regions it hides, run `tools\build-library.ps1`. It appears in the lab, and in the game once synced.
+- **A new tool:** a `t_<name>(kit)` function in `TOOLS`. Author it with the handle along +Z in Blender (that is +Y in the
+  game), the grip at the origin, the edge side toward -X.
+- **Reshaping the body toward KayKit's polish:** the head is `HEAD_C` / `HEAD_R` and the two exponents in `build_body`; the
+  torso is the `TORSO` profile (z, half width, half depth); limbs are tubes along the bones. The skeleton, the slots, the
+  materials and the animations do not change, so everything already built keeps working. Faces are in `build_body` too.
+- Skin weights are copied from KayKit's neutral Mannequin (`tools/reference/Mannequin_Medium.glb`) by nearest surface; head
+  parts are rigid to the head bone. `tools/bl_make_rig.py` makes the skeleton file (`tools/reference/Rig_Medium.glb`).
 
-```json
-{ "name": "Farmer", "hair": "short", "sleeves": "long", "trousers": "long",
-  "colors": { "skin": "#e2b48a", "shirt": "#6a9a4c", "trousers": "#6b5236", "hair": "#a06a2c" } }
+```
+tools\fetch-packs.ps1        downloads KayKit's animation pack and classic characters into downloads\ and extracted\ (not in git)
+tools\build-library.ps1      rebuilds library\ from scratch and fills reference\
+tools\sync-to-wayfarer.ps1   copies character.js and library\ into the game (the game keeps its own copy and falls back to it)
+tools\serve.mjs              the tiny local server behind "Open Model Lab.cmd"
+tools\bl_inspect_rig.py      prints a rig's bones and a mesh's skin weights; tools\inspect-gltf.mjs summarizes any glTF
 ```
 
-- `hair`: `short`, `long`, `bun`, `bald`; `sleeves`: `long`, `short`; `trousers`: `long`, `shorts`
-- `colors`: `skin shirt trousers boots belt linen hair eyes eyeshine mouth` (any you leave out use the defaults)
-- To make another: copy a spec, change it, run `tools\build-library.ps1` (or call the generator directly, see the
-  header of `bl_make_character.py`), then add its name to the `ours` list in `viewer.js`.
-- To change the body itself (shapes, proportions, a new hairstyle), edit `build_character()` in `bl_make_character.py`.
-  Positions are in Blender units on KayKit's skeleton (Z up, faces -Y, left = +X); the bone positions are listed by
-  `tools\bl_inspect_rig.py`.
+## Checked
 
-**Why every animation works:** the skeleton is copied from KayKit's Knight, and the skin weights are copied from
-KayKit's own neutral Mannequin (nearest surface; head parts are rigid to the head bone), so joints bend the way
-KayKit's do. Checked in the viewer's browser: for all 139 clips (132 distinct) at four moments each, every bone of every
-character of ours is at the same world position as KayKit's Knight, and no clip track is left without a bone.
+For the old square-headed kit, every bone of every character matched KayKit's own Knight in all 139 clips (132 distinct);
+the new kit uses the same skeleton file and the same weight source, and the lab plays all of them on it.
 
-**Recolor in a game** (cosmetics): each part is its own named material. `SkeletonUtils.clone` shares materials between
-clones, so clone the material before changing it:
+## Credits
 
-```js
-const body = SkeletonUtils.clone(gltf.scene);
-body.traverse((o) => {
-  if (o.isMesh && o.material.name === 'shirt') { o.material = o.material.clone(); o.material.color.set('#3f7ca8'); }
-});
-```
-
-**Hats and tools** attach to bones: the head bone is named `head`, the hand slots `handslot.l` and `handslot.r`.
-Three.js strips dots from names, so look them up as `head`, `handslotl`, `handslotr`
-(`root.getObjectByName('handslotr').add(tool)`).
-## Not wired in
-
-`Kenney Animated Characters 3` (CC0, one rig, 3 animations) was downloaded but not converted: too few
-animations to be an option next to these two.
-
-## Credits (optional under CC0)
-
-Quaternius (quaternius.com), Kay Lousberg (kaylousberg.com).
+Animation clips and the skeleton: Kay Lousberg (kaylousberg.com), CC0.

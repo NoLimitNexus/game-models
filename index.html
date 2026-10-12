@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="Free CC0 animated 3D characters for the game projects, ready to load in Three.js and Unity.">
+<meta name="description" content="Our own animated characters: swap every part, recolor, pick a tool and play any animation.">
 <title>Model Lab</title>
 <style>
   :root {
@@ -15,7 +15,7 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
-  body { display: grid; grid-template-columns: minmax(0, 1fr) 372px; height: 100dvh; overflow: hidden; }
+  body { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: 100dvh; overflow: hidden; }
   #stage { position: relative; min-width: 0; min-height: 0; }
   #stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   #hud { position: absolute; left: var(--gutter); top: var(--gutter); right: var(--gutter); pointer-events: none;
@@ -26,32 +26,29 @@
   aside { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: var(--gutter);
           display: flex; flex-direction: column; gap: 18px; -webkit-overflow-scrolling: touch; }
   h2 { margin: 0 0 8px; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 650; }
-  .packs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .pack { text-align: left; background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
-          border-radius: var(--radius); padding: 10px 11px; cursor: pointer; font: inherit; }
-  .pack b { display: block; font-size: 14px; margin-bottom: 3px; }
-  .pack span { display: block; font-size: 12px; color: var(--muted); line-height: 1.35; }
-  .pack[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 999px;
           padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; min-height: 34px; }
-  .chip:hover, .pack:hover { border-color: #3d5262; }
+  .chip:hover { border-color: #3d5262; }
   .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .slot { display: grid; grid-template-columns: 62px 1fr; gap: 8px; align-items: start; margin-top: 10px; }
+  .slot:first-child { margin-top: 0; }
+  .slot > b { font-size: 12px; color: var(--muted); font-weight: 600; padding-top: 9px; }
   .group { margin-top: 12px; }
   .group:first-child { margin-top: 0; }
   .group h3 { margin: 0 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  label.speed { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); flex: 1 1 160px; }
-  input[type=range] { flex: 1; accent-color: var(--accent); }
   .colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
   .colors label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
   .colors input { width: 34px; height: 28px; padding: 0; border: 1px solid var(--line); background: none; border-radius: 6px; cursor: pointer; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  label.speed { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); flex: 1 1 160px; }
+  input[type=range] { flex: 1; accent-color: var(--accent); }
   .note { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
   .note a { color: var(--accent); }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   [hidden] { display: none !important; }
   @media (max-width: 780px) {
-    body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) 46dvh; }
+    body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) 50dvh; }
     aside { border-left: 0; border-top: 1px solid var(--line); padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom)); }
     #hud h1 { font-size: 16px; }
   }
@@ -73,24 +70,24 @@
   </div>
   <aside>
     <section>
-      <h2>Pack</h2>
-      <div class="packs" id="packs"></div>
+      <h2>Character</h2>
+      <div class="chips" id="presets"></div>
     </section>
     <section>
-      <h2>Character</h2>
-      <div class="chips" id="chars"></div>
+      <h2>Parts</h2>
+      <div id="slots"></div>
     </section>
-    <section id="hairSec" hidden>
-      <h2>Hair</h2>
-      <div class="chips" id="hair"></div>
-      <div class="chips" id="hairColor" style="margin-top:8px"></div>
-    </section>
-    <section id="colorSec" hidden>
-      <h2>Colors (ours)</h2>
+    <section>
+      <h2>Colors</h2>
       <div class="colors" id="colors"></div>
     </section>
     <section>
+      <h2>Tool in hand</h2>
+      <div class="chips" id="tools"></div>
+    </section>
+    <section>
       <h2>Animation</h2>
+      <div class="chips" id="roles" style="margin-bottom:12px"></div>
       <div id="anims"></div>
     </section>
     <section>
@@ -100,8 +97,12 @@
         <label class="speed">Speed <input type="range" id="speed" min="0.2" max="2" step="0.1" value="1"></label>
       </div>
     </section>
+    <section id="refSec" hidden>
+      <h2>Reference (not ours, this PC only)</h2>
+      <div class="chips" id="refs"></div>
+    </section>
     <section>
-      <p class="note">Quaternius and Kay Lousberg (KayKit) models are CC0 (public domain), converted to GLB for the web. The characters marked "ours" are built by tools/bl_make_character.py on KayKit's skeleton. Drag to orbit, pinch or scroll to zoom.</p>
+      <p class="note">Every model here is our own, built by <code>tools/bl_make_kit.py</code> on KayKit's skeleton, so all animations play on any mix of parts. The animation clips themselves come from KayKit (CC0). Drag to orbit, pinch or scroll to zoom.</p>
     </section>
   </aside>
   <script>

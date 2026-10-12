@@ -1,0 +1,36 @@
+{
+  "files": [
+    { "group": "General", "file": "Rig_Medium_General.glb" },
+    { "group": "Movement Basic", "file": "Rig_Medium_MovementBasic.glb" },
+    { "group": "Movement Advanced", "file": "Rig_Medium_MovementAdvanced.glb" },
+    { "group": "Combat Melee", "file": "Rig_Medium_CombatMelee.glb" },
+    { "group": "Combat Ranged", "file": "Rig_Medium_CombatRanged.glb" },
+    { "group": "Simulation", "file": "Rig_Medium_Simulation.glb" },
+    { "group": "Special", "file": "Rig_Medium_Special.glb" },
+    { "group": "Tools", "file": "Rig_Medium_Tools.glb" }
+  ],
+  "roles": {
+    "idle": "Idle_A",
+    "idle2": "Idle_B",
+    "walk": "Walking_A",
+    "run": "Running_A",
+    "chop": "Chopping",
+    "mine": "Pickaxing",
+    "hammer": "Hammering",
+    "saw": "Sawing",
+    "dig": "Digging",
+    "fish": "Fishing_Idle",
+    "fish_cast": { "clip": "Fishing_Cast", "loop": false },
+    "fish_reel": "Fishing_Reeling",
+    "fish_catch": { "clip": "Fishing_Catch", "loop": false },
+    "cook": "Working_B",
+    "craft": "Working_C",
+    "pickup": { "clip": "PickUp", "loop": false },
+    "interact": { "clip": "Interact", "loop": false },
+    "use": { "clip": "Use_Item", "loop": false },
+    "cheer": { "clip": "Cheering", "loop": false },
+    "wave": { "clip": "Waving", "loop": false },
+    "sit": "Sit_Chair_Idle",
+    "hit": { "clip": "Hit_A", "loop": false }
+  }
+}
