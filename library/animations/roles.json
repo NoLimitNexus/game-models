@@ -21,6 +21,7 @@
     "saw": "Sawing",
     "dig": "Digging",
     "net_dip": "Digging",
+    "net_cast": { "clip": "NetCast", "fallback": "net_dip" },
     "fish": "Fishing_Idle",
     "fish_cast": { "clip": "Fishing_Cast", "loop": false },
     "fish_reel": "Fishing_Reeling",

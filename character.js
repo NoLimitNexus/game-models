@@ -69,6 +69,12 @@ export class Library {
 /** Roles the game needs that an older roles record (in the database) may not have yet; the catalog's own entry wins. */
 export const BUILT_IN_ROLES = {
   scoop: 'Digging',   // dipping a net into the water and lifting it
+  // SAVED at his word (2026-10-12: "save our current animation for fishing ... I'm going to have you use this again for something
+  // else or recycle it back in"): the first fishing animation, KayKit's Digging clip with the net in the hand, kept on the beat by
+  // swing.js SWINGS.net_dip. To bring it back for fishing, map the net to 'net_dip' in view.js roleFor.
+  net_dip: 'Digging',
+  // throwing a cast net and hauling it in (our own clip, Rig_Medium_Ours.glb); until the database has it, the saved net dip
+  net_cast: { clip: 'NetCast', fallback: 'net_dip' },
   stir: { clip: 'Stirring', fallback: 'cook' },   // our own clip (Rig_Medium_Ours.glb); until it is in the database, KayKit's cooking pose
 };
 

@@ -10,6 +10,11 @@ plain bone keys. Writes one glTF with one animation per clip (armature only, lik
 Clips so far:
   Stirring   the right hand circles a spoon over a pot (two turns in 2.5 s, loops), the left hand rests on the hip, the
              body leans a little over the pot and turns with the stir, the head looks down at it.
+  NetCast    throwing a cast net and bringing it in (3.0 s, loops; one fishing attempt): both hands gather the net at the
+             right hip, the body winds up and throws it out over the water, holds the rope while it sinks, hauls it in hand
+             over hand, lifts it out (2.45 s: the moment the game decides the catch) and tips it into the bag at the left
+             hip. The net itself is drawn by the game (it flies, opens on the water and comes back), not part of the clip.
+             His ask, 2026-10-12: "look like they're actually throwing a net into the water ... even bagging it back up".
 """
 import bpy, sys, os, math
 from mathutils import Vector, Euler, Matrix
@@ -85,49 +90,12 @@ def best_pole_angle(c, elbow_bone, prefer):
     return best[1]
 
 
-# ---------------------------------------------------------------------------------------------------------- Stirring
-# Blender world: Z up, the character faces -Y, its right hand is at -X. Lengths are the rig's own (a rig 1.49 tall).
-FRAMES = 60                      # one loop = 2.5 s at 24 fps, two turns of the spoon
-CENTER = Vector((-0.15, -0.40, 0.90))   # where the spoon turns, close in front of the chest (the spoon itself reaches the pot)
-RADIUS = 0.075
-tgt_r = empty('tgt_r', CENTER)
-pole_r = empty('pole_r', (-0.55, 0.20, 0.55))
-tgt_l = empty('tgt_l', (0.285, -0.06, 0.66))   # the left hand rests on the hip
-pole_l = empty('pole_l', (0.62, 0.30, 0.80))
-c_r = ik('wrist.r', tgt_r, pole_r, 3)
-c_l = ik('wrist.l', tgt_l, pole_l, 3)
-
-# What is held points where the hand slot points (a tool's handle runs along the slot's own axis; forward at rest). The spoon
-# has to point at the pot: about a tile in front of the character and a little below the hand.
-aim_r = empty('aim_r', (-0.15, -1.0, 0.72))
-
-
 def local_axis_name(bone_name, world_dir):
     """Which of a bone's own axes points along `world_dir` in the rest pose, as a Damped Track axis name."""
     rest = arm.data.bones[bone_name].matrix_local.to_3x3()
     d = rest.inverted() @ world_dir
     axis = max(range(3), key=lambda i: abs(d[i]))
     return ('TRACK_' if d[axis] > 0 else 'TRACK_NEGATIVE_') + 'XYZ'[axis], tuple(round(v, 2) for v in d)
-
-
-slot_dir = (arm.data.bones['handslot.r'].tail_local - arm.data.bones['handslot.r'].head_local).normalized()
-track_axis, local_d = local_axis_name('hand.r', slot_dir)
-log('slot direction', tuple(round(v, 2) for v in slot_dir), "in the hand bone's own axes", local_d, '->', track_axis)
-aim = PB['hand.r'].constraints.new('DAMPED_TRACK')
-aim.target = aim_r
-aim.track_axis = track_axis
-update()
-log('rest right shoulder', tuple(round(v, 3) for v in world(PB['upperarm.r'])))
-ang_r = best_pole_angle(c_r, 'lowerarm.r', lambda e: e.z - 0.4 * (-e.x))        # elbow low and out
-ang_l = best_pole_angle(c_l, 'lowerarm.l', lambda e: e.z - 0.4 * e.x)
-log('pole angles (deg)', round(math.degrees(ang_r)), round(math.degrees(ang_l)))
-log('elbow R', tuple(round(v, 3) for v in world(PB['lowerarm.r'])), 'hand R', tuple(round(v, 3) for v in world(PB['wrist.r'], True)))
-log('elbow L', tuple(round(v, 3) for v in world(PB['lowerarm.l'])), 'hand L', tuple(round(v, 3) for v in world(PB['wrist.l'], True)))
-
-
-def lean(bone, axis, degrees, frames_fn=None):
-    """Rotate a bone about a world axis ('x' or 'z'); the sign is chosen so that +degrees means forward (x) / to the right (z)."""
-    return (bone, axis, degrees)
 
 
 def key_rot(bone, euler):
@@ -163,70 +131,175 @@ def turn_sign(bone):
     return 1.0 if r_after.y > r_before.y else -1.0   # the right shoulder moving back means the chest turned left
 
 
+def rest_pose():
+    for pb in PB:
+        pb.rotation_quaternion = (1, 0, 0, 0)
+        pb.location = (0, 0, 0)
+        pb.scale = (1, 1, 1)
+    update()
+
+
 fs_spine = forward_sign('spine')
 fs_head = forward_sign('head')
 ts_chest = turn_sign('chest')
 log('signs', fs_spine, fs_head, ts_chest)
+log('rest right shoulder', tuple(round(v, 3) for v in world(PB['upperarm.r'])), 'left', tuple(round(v, 3) for v in world(PB['upperarm.l'])))
 
-scene.frame_start = 1
-scene.frame_end = FRAMES
-for f in range(1, FRAMES + 1):
-    th = 2 * math.pi * 2 * (f - 1) / FRAMES
-    # the spoon goes round the pot; a little bob as it drags through
-    p = CENTER + Vector((RADIUS * math.cos(th), RADIUS * math.sin(th), 0.012 * math.sin(2 * th)))
-    tgt_r.location = p
-    tgt_r.keyframe_insert('location', frame=f)
-    # the body: leans over the pot and turns a little with the stir; the head keeps looking down at it
-    key_rot('spine', Euler((fs_spine * math.radians(9), 0, 0)))
-    key_rot('chest', Euler((fs_spine * math.radians(4), ts_chest * math.radians(5) * math.sin(th + 0.6), 0)))
-    key_rot('head', Euler((fs_head * math.radians(14), 0, 0)))
-    for b in ('spine', 'chest', 'head'):
-        PB[b].keyframe_insert('rotation_quaternion', frame=f)
-    # hips shift a touch with the stir
-    PB['hips'].location = Vector((0.006 * math.cos(th), 0.0, 0.0))
-    PB['hips'].keyframe_insert('location', frame=f)
 
-# bake the IK to plain bone keys
-scene.frame_set(1)
-update()
-bpy.ops.pose.select_all(action='SELECT')
-before = set(a.name for a in bpy.data.actions)
-bpy.ops.nla.bake(frame_start=1, frame_end=FRAMES, step=1, only_selected=True, visual_keying=True,
-                 clear_constraints=True, use_current_action=True, bake_types={'POSE'})
-log('baked; actions:', [a.name for a in bpy.data.actions])
-action = arm.animation_data.action
-action.name = 'Stirring'
-action.use_fake_user = True
-log('action', action.name, 'frames', tuple(action.frame_range))
+def bake(name, frames, empties):
+    """Bake the IK and the keys to plain bone keys in a new action called `name`; the helpers are removed."""
+    scene.frame_start = 1
+    scene.frame_end = frames
+    scene.frame_set(1)
+    update()
+    bpy.ops.pose.select_all(action='SELECT')
+    bpy.ops.nla.bake(frame_start=1, frame_end=frames, step=1, only_selected=True, visual_keying=True,
+                     clear_constraints=True, use_current_action=True, bake_types={'POSE'})
+    action = arm.animation_data.action
+    action.name = name
+    action.use_fake_user = True
+    log('baked', name, 'frames', tuple(action.frame_range))
+    for e in empties:
+        bpy.data.objects.remove(e, do_unlink=True)
+    for pb in PB:  # anything the bake left behind
+        for c in list(pb.constraints):
+            pb.constraints.remove(c)
+    arm.animation_data.action = None
+    rest_pose()
+    return action
 
-# check the baked hand path: a circle of the right size around the centre
-pts = []
-for f in range(1, FRAMES + 1, 5):
+
+# ---------------------------------------------------------------------------------------------------------- Stirring
+# Blender world: Z up, the character faces -Y, its right hand is at -X. Lengths are the rig's own (a rig 1.49 tall).
+def make_stirring():
+    FRAMES = 60                      # one loop = 2.5 s at 24 fps, two turns of the spoon
+    CENTER = Vector((-0.15, -0.40, 0.90))   # where the spoon turns, close in front of the chest (the spoon itself reaches the pot)
+    RADIUS = 0.075
+    tgt_r = empty('tgt_r', CENTER)
+    pole_r = empty('pole_r', (-0.55, 0.20, 0.55))
+    tgt_l = empty('tgt_l', (0.285, -0.06, 0.66))   # the left hand rests on the hip
+    pole_l = empty('pole_l', (0.62, 0.30, 0.80))
+    c_r = ik('wrist.r', tgt_r, pole_r, 3)
+    c_l = ik('wrist.l', tgt_l, pole_l, 3)
+
+    # What is held points where the hand slot points (a tool's handle runs along the slot's own axis; forward at rest). The spoon
+    # has to point at the pot: about a tile in front of the character and a little below the hand.
+    aim_r = empty('aim_r', (-0.15, -1.0, 0.72))
+    slot_dir = (arm.data.bones['handslot.r'].tail_local - arm.data.bones['handslot.r'].head_local).normalized()
+    track_axis, local_d = local_axis_name('hand.r', slot_dir)
+    log('slot direction', tuple(round(v, 2) for v in slot_dir), "in the hand bone's own axes", local_d, '->', track_axis)
+    aim = PB['hand.r'].constraints.new('DAMPED_TRACK')
+    aim.target = aim_r
+    aim.track_axis = track_axis
+    update()
+    ang_r = best_pole_angle(c_r, 'lowerarm.r', lambda e: e.z - 0.4 * (-e.x))        # elbow low and out
+    ang_l = best_pole_angle(c_l, 'lowerarm.l', lambda e: e.z - 0.4 * e.x)
+    log('stirring pole angles (deg)', round(math.degrees(ang_r)), round(math.degrees(ang_l)))
+
+    for f in range(1, FRAMES + 1):
+        th = 2 * math.pi * 2 * (f - 1) / FRAMES
+        # the spoon goes round the pot; a little bob as it drags through
+        p = CENTER + Vector((RADIUS * math.cos(th), RADIUS * math.sin(th), 0.012 * math.sin(2 * th)))
+        tgt_r.location = p
+        tgt_r.keyframe_insert('location', frame=f)
+        # the body: leans over the pot and turns a little with the stir; the head keeps looking down at it
+        key_rot('spine', Euler((fs_spine * math.radians(9), 0, 0)))
+        key_rot('chest', Euler((fs_spine * math.radians(4), ts_chest * math.radians(5) * math.sin(th + 0.6), 0)))
+        key_rot('head', Euler((fs_head * math.radians(14), 0, 0)))
+        for b in ('spine', 'chest', 'head'):
+            PB[b].keyframe_insert('rotation_quaternion', frame=f)
+        # hips shift a touch with the stir
+        PB['hips'].location = Vector((0.006 * math.cos(th), 0.0, 0.0))
+        PB['hips'].keyframe_insert('location', frame=f)
+
+    action = bake('Stirring', FRAMES, [tgt_r, pole_r, tgt_l, pole_l, aim_r])
+    return action
+
+
+# ---------------------------------------------------------------------------------------------------------- NetCast
+# One fishing attempt, 3.0 s: 72 frames. Each row: frame, right hand, left hand (where the wrists go), chest turn (+ = to the
+# right, toward -X), spine lean (+ = forward), head tilt (+ = down), hips drop (metres). The frames in between are smooth.
+# A frame-1 pose equal to the last one makes it loop.
+NET_KEYS = [
+    # frame  right hand              left hand               turn  lean  head  drop
+    (1,  (-0.10, -0.32, 0.88), (0.06, -0.30, 0.90),     0,    6,    8,  0.00),   # ready: the gathered net in both hands
+    (10, (-0.32, -0.06, 0.82), (-0.12, -0.18, 0.92),   24,    8,    4,  0.03),   # swing it to the right hip
+    (17, (-0.36, 0.04, 0.80),  (-0.18, -0.10, 0.88),   34,   10,    2,  0.05),   # wound up
+    (22, (-0.12, -0.56, 1.22), (0.10, -0.53, 1.20),   -10,   14,   -4,  0.00),   # release: arms out and up, the net flies
+    (28, (-0.10, -0.52, 1.04), (0.08, -0.50, 1.03),    -6,   12,    6,  0.00),   # follow through
+    (36, (-0.12, -0.44, 0.95), (0.06, -0.42, 0.95),     0,    8,   12,  0.01),   # hold the rope while it sinks
+    (41, (-0.10, -0.50, 0.98), (0.06, -0.16, 0.88),     4,    4,   12,  0.02),   # haul: right hand out, left hand in
+    (46, (-0.10, -0.16, 0.88), (0.06, -0.50, 0.98),    -4,   -2,   12,  0.02),   # ...left hand out, right hand in
+    (51, (-0.10, -0.50, 0.98), (0.06, -0.16, 0.88),     4,    4,   12,  0.02),
+    (56, (-0.10, -0.18, 0.90), (0.06, -0.46, 0.96),    -4,   -2,   12,  0.02),
+    (59, (-0.10, -0.38, 1.22), (0.08, -0.36, 1.22),     0,   -4,    0,  0.00),   # lift it out of the water (the catch)
+    (66, (0.10, -0.24, 0.94),  (0.26, -0.06, 0.86),   -22,    6,   10,  0.02),   # tip it into the bag at the left hip
+    (72, (-0.10, -0.32, 0.88), (0.06, -0.30, 0.90),     0,    6,    8,  0.00),   # ready again
+]
+
+
+def make_netcast():
+    FRAMES = 72
+    tgt_r = empty('n_tgt_r', NET_KEYS[0][1])
+    tgt_l = empty('n_tgt_l', NET_KEYS[0][2])
+    pole_r = empty('n_pole_r', (-0.60, 0.25, 0.60))
+    pole_l = empty('n_pole_l', (0.60, 0.25, 0.60))
+    c_r = ik('wrist.r', tgt_r, pole_r, 3)
+    c_l = ik('wrist.l', tgt_l, pole_l, 3)
+    ang_r = best_pole_angle(c_r, 'lowerarm.r', lambda e: e.z - 0.4 * (-e.x))   # elbows low and out
+    ang_l = best_pole_angle(c_l, 'lowerarm.l', lambda e: e.z - 0.4 * e.x)
+    log('netcast pole angles (deg)', round(math.degrees(ang_r)), round(math.degrees(ang_l)))
+    for (f, r, l, turn, lean, head, drop) in NET_KEYS:
+        tgt_r.location = Vector(r)
+        tgt_r.keyframe_insert('location', frame=f)
+        tgt_l.location = Vector(l)
+        tgt_l.keyframe_insert('location', frame=f)
+        key_rot('spine', Euler((fs_spine * math.radians(lean), 0, 0)))
+        key_rot('chest', Euler((fs_spine * math.radians(lean * 0.4), ts_chest * math.radians(turn), 0)))
+        key_rot('head', Euler((fs_head * math.radians(head), 0, 0)))
+        for b in ('spine', 'chest', 'head'):
+            PB[b].keyframe_insert('rotation_quaternion', frame=f)
+        PB['hips'].location = Vector((0.0, 0.0, -drop))
+        PB['hips'].keyframe_insert('location', frame=f)
+    # smooth in between, and no overshoot (a held net does not wobble past where it is going)
+    for obj in (tgt_r, tgt_l, arm):
+        ad = obj.animation_data
+        if not ad or not ad.action:
+            continue
+        for fc in getattr(ad.action, 'fcurves', []):
+            for kp in fc.keyframe_points:
+                kp.interpolation = 'BEZIER'
+                kp.handle_left_type = 'AUTO_CLAMPED'
+                kp.handle_right_type = 'AUTO_CLAMPED'
+    action = bake('NetCast', FRAMES, [tgt_r, tgt_l, pole_r, pole_l])
+    # check: where the hands are at the release and at the lift
+    return action
+
+
+stir = make_stirring()
+net = make_netcast()
+
+# check the baked NetCast hand path: out at the release, in at the haul, up at the lift
+arm.animation_data.action = net
+for f in (1, 17, 22, 46, 59, 66):
     scene.frame_set(f)
     update()
-    pts.append(world(PB['wrist.r'], True))
-cx = sum(p.x for p in pts) / len(pts)
-cy = sum(p.y for p in pts) / len(pts)
-rad = [math.hypot(p.x - cx, p.y - cy) for p in pts]
-log('hand path centre', round(cx, 3), round(cy, 3), 'radius min/max', round(min(rad), 3), round(max(rad), 3), 'z range', round(min(p.z for p in pts), 3), round(max(p.z for p in pts), 3))
+    log('NetCast frame', f, 'right hand', tuple(round(v, 3) for v in world(PB['wrist.r'], True)), 'left hand', tuple(round(v, 3) for v in world(PB['wrist.l'], True)))
+arm.animation_data.action = None
 
-# the empties are not part of the file
-for e in (tgt_r, pole_r, tgt_l, pole_l, aim_r):
-    bpy.data.objects.remove(e, do_unlink=True)
-
-# one animation per clip: through an NLA track, like the converter that made KayKit's files
+# one animation per clip: through NLA tracks, like the converter that made KayKit's files
 ad = arm.animation_data
-ad.action = None
 for tr in list(ad.nla_tracks):
     ad.nla_tracks.remove(tr)
-tr = ad.nla_tracks.new()
-tr.name = action.name
-st = tr.strips.new(action.name, int(action.frame_range[0]), action)
-try:
-    if hasattr(st, 'action_slot') and st.action_slot is None and len(action.slots):
-        st.action_slot = action.slots[0]
-except Exception as e:  # noqa
-    log('slot problem', repr(e))
+for action in (stir, net):
+    tr = ad.nla_tracks.new()
+    tr.name = action.name
+    st = tr.strips.new(action.name, int(action.frame_range[0]), action)
+    try:
+        if hasattr(st, 'action_slot') and st.action_slot is None and len(action.slots):
+            st.action_slot = action.slots[0]
+    except Exception as e:  # noqa
+        log('slot problem', repr(e))
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=OUT, export_format='GLB', export_yup=True, export_apply=False, export_skins=True,
                           export_animations=True, export_animation_mode='NLA_TRACKS', export_force_sampling=True,
