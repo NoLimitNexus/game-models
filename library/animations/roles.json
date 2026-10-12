@@ -7,7 +7,8 @@
     { "group": "Combat Ranged", "file": "Rig_Medium_CombatRanged.glb" },
     { "group": "Simulation", "file": "Rig_Medium_Simulation.glb" },
     { "group": "Special", "file": "Rig_Medium_Special.glb" },
-    { "group": "Tools", "file": "Rig_Medium_Tools.glb" }
+    { "group": "Tools", "file": "Rig_Medium_Tools.glb" },
+    { "group": "Ours", "file": "Rig_Medium_Ours.glb" }
   ],
   "roles": {
     "idle": "Idle_A",
@@ -24,6 +25,7 @@
     "fish_reel": "Fishing_Reeling",
     "fish_catch": { "clip": "Fishing_Catch", "loop": false },
     "cook": "Working_B",
+    "stir": "Stirring",
     "craft": "Working_C",
     "pickup": { "clip": "PickUp", "loop": false },
     "interact": { "clip": "Interact", "loop": false },

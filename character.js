@@ -60,11 +60,17 @@ export class Library {
   }
   /** A role ('walk', 'chop'...) as { clip, loop } from the catalog's role table. */
   role(name) {
-    const r = this.catalog.roles && this.catalog.roles[name];
+    const r = (this.catalog.roles && this.catalog.roles[name]) || BUILT_IN_ROLES[name];
     if (!r) return null;
     return typeof r === 'string' ? { clip: r, loop: true } : { loop: true, ...r };
   }
 }
+
+/** Roles the game needs that an older roles record (in the database) may not have yet; the catalog's own entry wins. */
+export const BUILT_IN_ROLES = {
+  scoop: 'Digging',   // dipping a net into the water and lifting it
+  stir: { clip: 'Stirring', fallback: 'cook' },   // our own clip (Rig_Medium_Ours.glb); until it is in the database, KayKit's cooking pose
+};
 
 /** Reads manifest.json + roles.json + presets.json from a folder (the lab, and the game's bundled copy). */
 export async function catalogFromFiles(baseUrl) {
@@ -257,11 +263,11 @@ export class Character {
   }
 
   /** Play a clip by name. Does nothing if it is already the one playing. once = play to the end and hold. */
-  async playClip(name, { fade = 0.2, once = false, speed = 1 } = {}) {
+  async playClip(name, { fade = 0.2, once = false, speed = 1, restart = false } = {}) {
     const clips = await this.lib.clips();
     const entry = clips.get(name);
     if (!entry) return false;
-    if (this._currentName === name && this._current) { this._current.timeScale = speed; return true; }
+    if (this._currentName === name && this._current && !restart) { this._current.timeScale = speed; return true; }
     const next = this.mixer.clipAction(this.clipFor(name, entry));
     next.reset();
     next.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, once ? 1 : Infinity);
@@ -277,7 +283,9 @@ export class Character {
   async playRole(role, opts = {}) {
     const r = this.lib.role(role);
     if (!r) return false;
-    return this.playClip(r.clip, { once: r.loop === false, ...opts });
+    const ok = await this.playClip(r.clip, { once: r.loop === false, ...opts });
+    if (!ok && r.fallback && r.fallback !== role) return this.playRole(r.fallback, opts); // our own clip is not here yet: use the older one
+    return ok;
   }
   get playing() { return this._currentName; }
 

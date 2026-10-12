@@ -346,6 +346,17 @@
    },
    "bone": "handslot.r",
    "scale": 1.1
+  },
+  {
+   "id": "spoon",
+   "name": "Wooden spoon",
+   "file": "tools/spoon.glb",
+   "tris": 456,
+   "materials": {
+    "wood": "#7a5230"
+   },
+   "bone": "handslot.r",
+   "scale": 1.15
   }
  ]
 }

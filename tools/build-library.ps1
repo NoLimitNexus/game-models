@@ -1,4 +1,4 @@
-﻿# Rebuilds library\ from scratch (headless Blender, no window opens):
+# Rebuilds library\ from scratch (headless Blender, no window opens):
 #   library\animations   the 8 Rig_Medium clip files from KayKit's animation pack, stripped to animation only (132 clips)
 #   library\ours         OUR body, parts and tools, made by tools\bl_make_kit.py on that skeleton
 # and copies KayKit's classic characters to reference\kaykit (this PC only, the quality benchmark; never published).
@@ -21,6 +21,12 @@ foreach ($f in Get-ChildItem "$kn\Animations\gltf\Rig_Medium" -Filter *.glb) {
 $jobFile = Join-Path $env:TEMP 'game-models-jobs.json'
 [ordered]@{ log = "$g\tools\last-run.log"; jobs = $jobs } | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 $jobFile
 & powershell.exe -NoProfile -File "$PSScriptRoot\run-blender.ps1" -Jobs $jobFile | Select-String 'wrote|FAILED|exit code|DONE'
+
+# 1b. our own clips, authored on that skeleton (tools\bl_make_clips.py): library\animations\Rig_Medium_Ours.glb
+$clipLog = Join-Path $env:TEMP 'game-models-clips.log'
+$pc = Start-Process -FilePath $blender -WindowStyle Hidden -Wait -PassThru -ArgumentList @('--background', '--factory-startup', '--python', "`"$PSScriptRoot\bl_make_clips.py`"", '--', "`"$clipLog`"", "`"$lib\animations\Rig_Medium_General.glb`"", "`"$lib\animations\Rig_Medium_Ours.glb`"")
+"clip generator exit code: " + $pc.ExitCode
+Get-Content $clipLog | Select-String 'FAILED|DONE|^wrote' | Select-Object -Last 3
 
 # 2. our body kit
 $kitLog = Join-Path $env:TEMP 'game-models-kit.log'

@@ -571,12 +571,19 @@ def t_rod(kit):
     kit.add('brass', 'brass', None, ellipsoid((0.0, 0.11, 0.18), (0.012, 0.012, 0.045), segs=8, rings=5))
 
 
+def t_spoon(kit):
+    # a long wooden spoon for stirring the pot: a handle, a worn grip, a flat bowl at the end
+    kit.add('wood', 'wood', None, handle(-0.25, 0.95, 0.032, 0.026))
+    kit.add('wood', 'cork', None, tube([(0, 0, -0.1), (0, 0, 0.2)], [0.04, 0.04], segs=10, cap_rings=2))
+    kit.add('wood', 'wood', None, ellipsoid((0, 0, 1.06), (0.085, 0.03, 0.15), n=2.4, m=2.4, segs=14, rings=8))
+
+
 # tools are drawn a little oversize so they read from the game's high camera (scaled about the grip)
-TOOL_SCALE = {'axe': 1.2, 'pickaxe': 1.2, 'hammer': 1.2, 'net': 1.15, 'rod': 1.1}
+TOOL_SCALE = {'axe': 1.2, 'pickaxe': 1.2, 'hammer': 1.2, 'net': 1.15, 'rod': 1.1, 'spoon': 1.15}
 
 TOOLS = {
     'axe': ('Axe', t_axe), 'pickaxe': ('Pickaxe', t_pickaxe), 'hammer': ('Hammer', t_hammer), 'net': ('Fishing net', t_net),
-    'rod': ('Fishing rod', t_rod),
+    'rod': ('Fishing rod', t_rod), 'spoon': ('Wooden spoon', t_spoon),
 }
 
 
