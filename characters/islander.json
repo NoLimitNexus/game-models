@@ -1,0 +1,15 @@
+{
+  "name": "Islander",
+  "hair": "short",
+  "sleeves": "short",
+  "trousers": "long",
+  "colors": {
+    "skin": "#f0c8a0",
+    "shirt": "#d9673d",
+    "trousers": "#3d4250",
+    "boots": "#3a2a20",
+    "belt": "#6b4a30",
+    "linen": "#f6f1e6",
+    "hair": "#5b3a22"
+  }
+}

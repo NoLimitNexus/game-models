@@ -43,6 +43,9 @@
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   label.speed { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); flex: 1 1 160px; }
   input[type=range] { flex: 1; accent-color: var(--accent); }
+  .colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+  .colors label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .colors input { width: 34px; height: 28px; padding: 0; border: 1px solid var(--line); background: none; border-radius: 6px; cursor: pointer; }
   .note { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
   .note a { color: var(--accent); }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -82,6 +85,10 @@
       <div class="chips" id="hair"></div>
       <div class="chips" id="hairColor" style="margin-top:8px"></div>
     </section>
+    <section id="colorSec" hidden>
+      <h2>Colors (ours)</h2>
+      <div class="colors" id="colors"></div>
+    </section>
     <section>
       <h2>Animation</h2>
       <div id="anims"></div>
@@ -94,7 +101,7 @@
       </div>
     </section>
     <section>
-      <p class="note">All models here are CC0 (public domain): Quaternius and Kay Lousberg (KayKit). They were converted to GLB and shrunk for the web. Drag to orbit, pinch or scroll to zoom.</p>
+      <p class="note">Quaternius and Kay Lousberg (KayKit) models are CC0 (public domain), converted to GLB for the web. The characters marked "ours" are built by tools/bl_make_character.py on KayKit's skeleton. Drag to orbit, pinch or scroll to zoom.</p>
     </section>
   </aside>
   <script>

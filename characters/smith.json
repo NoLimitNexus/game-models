@@ -1,0 +1,15 @@
+﻿{
+    "name":  "Smith",
+    "hair":  "bald",
+    "sleeves":  "short",
+    "trousers":  "long",
+    "colors":  {
+                   "skin":  "#b97d52",
+                   "shirt":  "#55545c",
+                   "trousers":  "#2f3138",
+                   "boots":  "#2a2220",
+                   "belt":  "#7a5a36",
+                   "linen":  "#8a8a90",
+                   "hair":  "#2a2220"
+               }
+}

@@ -33,8 +33,12 @@ const PACKS = {
   kaykit: {
     name: 'KayKit',
     blurb: 'Stylized low-poly. 23 bones, about 6,000 triangles, one tiny palette texture.',
-    characters: ['Knight', 'Barbarian', 'Mage', 'Ranger', 'Rogue', 'Rogue_Hooded']
-      .map((n) => ({ id: n.toLowerCase(), label: n.replace('_', ' '), file: K + `characters/${n}.glb` })),
+    characters: [
+      ...['Knight', 'Barbarian', 'Mage', 'Ranger', 'Rogue', 'Rogue_Hooded']
+        .map((n) => ({ id: n.toLowerCase(), label: n.replace('_', ' '), file: K + `characters/${n}.glb` })),
+      // ours: built by tools/bl_make_character.py on the same skeleton, so every KayKit animation plays on them
+      ...['Islander', 'Farmer', 'Angler', 'Cook', 'Smith'].map((n) => ({ id: n.toLowerCase(), label: n + ' (ours)', ours: true, file: `library/ours/characters/${n}.glb` })),
+    ],
     animFiles: ['General', 'MovementBasic', 'MovementAdvanced', 'CombatMelee', 'CombatRanged', 'Simulation', 'Special', 'Tools']
       .map((n) => ({ group: n.replace(/([a-z])([A-Z])/g, '$1 $2'), file: K + `animations/Rig_Medium_${n}.glb` })),
     defaultAnim: 'Idle_A',
@@ -159,6 +163,16 @@ async function buildActor(def) {
   holder.updateMatrixWorld(true);
   box = new THREE.Box3().setFromObject(holder);
   root.position.y -= box.min.y / s;
+  // ours: give each character its own materials so recoloring one does not change the others
+  let mats = null;
+  if (def.ours) {
+    mats = {};
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = o.material.clone();
+      (mats[o.material.name] ||= []).push(o.material);
+    });
+  }
   const boneNames = new Set();
   let skeleton = null;
   root.traverse((o) => {
@@ -168,7 +182,7 @@ async function buildActor(def) {
   return {
     def, holder, root, skeleton, boneNames,
     mixer: new THREE.AnimationMixer(root),
-    clips: new Map(), action: null, hair: [], info: countTris(root),
+    clips: new Map(), action: null, hair: [], info: countTris(root), mats,
   };
 }
 
@@ -365,6 +379,20 @@ function renderUi() {
     if (needsRebuild) rebuild(); else { frameCamera(); renderUi(); saveState(); }
   })));
 
+  const cur0 = actors.length === 1 ? actors[0] : null;
+  $('colorSec').hidden = !(cur0 && cur0.mats);
+  if (cur0 && cur0.mats) {
+    const order = ['skin', 'hair', 'shirt', 'trousers', 'boots', 'belt', 'linen', 'eyes', 'mouth', 'eyeshine'];
+    $('colors').replaceChildren(...order.filter((n) => cur0.mats[n]).map((n) => {
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = 'color';
+      input.value = '#' + cur0.mats[n][0].color.getHexString();
+      input.addEventListener('input', () => cur0.mats[n].forEach((m) => m.color.set(input.value)));
+      label.append(input, n === 'eyeshine' ? 'eye shine' : n);
+      return label;
+    }));
+  }
   const cur = actors.length === 1 ? actors[0] : null;
   $('title').textContent = cur ? `${pack.name}: ${cur.def.label}` : `${pack.name}: all ${actors.length} characters`;
   $('stats').textContent = (cur ? `${cur.info.tris.toLocaleString()} triangles, ${cur.info.bones} bones, ` : '')

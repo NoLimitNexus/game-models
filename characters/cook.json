@@ -1,0 +1,15 @@
+﻿{
+    "name":  "Cook",
+    "hair":  "bun",
+    "sleeves":  "long",
+    "trousers":  "long",
+    "colors":  {
+                   "skin":  "#f0c8a0",
+                   "shirt":  "#f3eee2",
+                   "trousers":  "#4a4f5c",
+                   "boots":  "#2f2a28",
+                   "belt":  "#b8452e",
+                   "linen":  "#c9473a",
+                   "hair":  "#7a3b1e"
+               }
+}

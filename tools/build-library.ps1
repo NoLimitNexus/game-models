@@ -39,5 +39,12 @@ $jobFile = Join-Path $env:TEMP 'game-models-jobs.json'
 [ordered]@{ log = "$g\tools\last-run.log"; jobs = $jobs } | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 $jobFile
 & powershell.exe -NoProfile -File "$PSScriptRoot\run-blender.ps1" -Jobs $jobFile | Select-String 'wrote|FAILED|exit code|DONE'
 
+# Our own characters (characters\*.json) on the KayKit skeleton, built by tools\bl_make_character.py
+$charLog = Join-Path $env:TEMP 'game-models-chars.log'
+$specs = (Get-ChildItem "$g\characters" -Filter *.json).FullName | ForEach-Object { "`"$_`"" }
+$p = Start-Process -FilePath (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\blender-launcher.exe') -WindowStyle Hidden -Wait -PassThru `
+  -ArgumentList (@('--background', '--factory-startup', '--python', "`"$PSScriptRoot\bl_make_character.py`"", '--', "`"$charLog`"", "`"$lib\ours\characters`"") + $specs)
+"character generator exit code: " + $p.ExitCode
+Get-Content $charLog | Select-String 'wrote|FAILED|DONE'
 Get-ChildItem $lib -Recurse -File -Filter *.glb | Group-Object { $_.Directory.Parent.Name + '/' + $_.Directory.Name } |
   ForEach-Object { '{0,-28} {1,2} files {2,6:N1} MB' -f $_.Name, $_.Count, (($_.Group | Measure-Object Length -Sum).Sum / 1MB) }
