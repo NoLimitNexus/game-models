@@ -76,6 +76,12 @@ export const BUILT_IN_ROLES = {
   // throwing a cast net and hauling it in (our own clip, Rig_Medium_Ours.glb); until the database has it, the saved net dip
   net_cast: { clip: 'NetCast', fallback: 'net_dip' },
   stir: { clip: 'Stirring', fallback: 'cook' },   // our own clip (Rig_Medium_Ours.glb); until it is in the database, KayKit's cooking pose
+  // picking through a pile by hand, down on one knee (our own clip; his ask, 2026-10-13: "get down on a knee and rummage through the
+  // rocks"); if the models in use do not have it, KayKit's working pose
+  rummage: { clip: 'Rummage', fallback: 'craft' },
+  // combat (his ask, 2026-10-13: "a cool magic casting"): KayKit's magic shot, once per spell; a flinch when something hits you
+  cast: { clip: 'Ranged_Magic_Shoot', loop: false },
+  hit: { clip: 'Hit_A', loop: false },
 };
 
 /** Reads manifest.json + roles.json + presets.json from a folder (the lab, and the game's bundled copy). */

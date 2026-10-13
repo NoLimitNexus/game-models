@@ -15,6 +15,10 @@ Clips so far:
              over hand, lifts it out (2.45 s: the moment the game decides the catch) and tips it into the bag at the left
              hip. The net itself is drawn by the game (it flies, opens on the water and comes back), not part of the clip.
              His ask, 2026-10-12: "look like they're actually throwing a net into the water ... even bagging it back up".
+  Rummage    picking through a pile by hand (beach stones, grass, reeds; 1.79 s, loops; one try): down on the right knee with the
+             left foot planted, leaning over the pile in front, both hands working through it in turn; the right hand lifts
+             something up to look at it (0.92 s: the moment the game decides the find). His ask, 2026-10-13: "get down on a knee
+             and rummage through the rocks ... make it look like he's actually doing something the entire time".
 """
 import bpy, sys, os, math
 from mathutils import Vector, Euler, Matrix
@@ -276,8 +280,95 @@ def make_netcast():
     return action
 
 
+# ---------------------------------------------------------------------------------------------------------- Rummage
+# One try at a pile, 43 frames (1.79 s). The legs are held by IK: the right knee down on the ground with the shin lying back and the
+# foot stretched out behind, the left foot flat on the ground ahead with its knee up. The hips come down to kneeling height (the hip
+# joints from 0.52 to 0.30). Each row: frame, right hand, left hand (where the wrists go: low, in front, at the pile's near edge),
+# chest turn (+ = to the right), lean (+ = forward), head tilt (+ = down). Frame 43 is frame 1, so it loops.
+RUM_DROP = 0.22
+RUM_FWD = 0.10    # the whole kneel sits this far forward of where he stands, so the hands reach the pile
+RUM_KEYS = [
+    # frame  right hand              left hand               turn  lean  head
+    (1,  (-0.10, -0.64, 0.24), (0.14, -0.58, 0.36),     4,   36,   16),   # right hand in the pile, left hovering
+    (8,  (-0.20, -0.66, 0.22), (0.10, -0.66, 0.24),     6,   37,   16),   # right sweeps aside, left goes in
+    (15, (-0.08, -0.60, 0.32), (0.18, -0.68, 0.22),    -2,   36,   15),   # right picks something up, left sweeps the other way
+    (22, (-0.08, -0.50, 0.50), (0.13, -0.62, 0.28),    -6,   31,   10),   # right lifts it to look at it: the find
+    (29, (-0.14, -0.66, 0.22), (0.09, -0.56, 0.40),     2,   36,   16),   # right back in, left lifts and turns a stone over
+    (36, (-0.07, -0.68, 0.22), (0.16, -0.66, 0.22),     6,   37,   17),   # both in the pile
+    (43, (-0.10, -0.64, 0.24), (0.14, -0.58, 0.36),     4,   36,   16),   # as at frame 1
+]
+
+
+def make_rummage():
+    FRAMES = 43
+    # the hips come down: a pose location is in the bone's own axes, so the world drop is turned into the hips' axes
+    down = arm.data.bones['hips'].matrix_local.to_3x3().inverted() @ Vector((0.0, -RUM_FWD, -RUM_DROP))
+    PB['hips'].location = down
+    update()
+    # the legs: ankles (the shin bones' tails) held where kneeling puts them, knees steered by pole targets
+    tgt_fl = empty('r_foot_l', (0.171, -0.20 - RUM_FWD, 0.145))      # left foot flat on the ground ahead, its knee up
+    pole_fl = empty('r_pole_l', (0.171, -0.90 - RUM_FWD, 0.45))
+    tgt_fr = empty('r_foot_r', (-0.171, 0.18 - RUM_FWD, 0.08))       # right shin lying back along the ground, the knee down
+    pole_fr = empty('r_pole_r', (-0.171, -0.80 - RUM_FWD, 0.05))
+    c_fl = ik('lowerleg.l', tgt_fl, pole_fl, 2)
+    c_fr = ik('lowerleg.r', tgt_fr, pole_fr, 2)
+    best_pole_angle(c_fl, 'lowerleg.l', lambda e: e.y - 0.5 * e.z)      # left knee forward and up
+    best_pole_angle(c_fr, 'lowerleg.r', lambda e: e.z + 0.3 * e.y)      # right knee down on the ground, a little forward
+    # the right foot stretched out behind and level (the toes bend down from it, so they rest on the ground)
+    aim_fr = empty('r_aim_r', (-0.171, 0.42 - RUM_FWD, 0.12))
+    track = PB['foot.r'].constraints.new('DAMPED_TRACK')
+    track.target = aim_fr
+    track.track_axis = 'TRACK_Y'                                        # a bone points along its own Y
+    # the hands
+    tgt_r = empty('r_tgt_r', RUM_KEYS[0][1])
+    tgt_l = empty('r_tgt_l', RUM_KEYS[0][2])
+    pole_r = empty('r_pole_hr', (-0.60, 0.10, 0.50))
+    pole_l = empty('r_pole_hl', (0.60, 0.10, 0.50))
+    c_r = ik('wrist.r', tgt_r, pole_r, 3)
+    c_l = ik('wrist.l', tgt_l, pole_l, 3)
+    lean0, turn0 = RUM_KEYS[0][4], RUM_KEYS[0][3]                       # lean the body before the arms' poles are chosen
+    key_rot('spine', Euler((fs_spine * math.radians(lean0 * 0.75), 0, 0)))
+    key_rot('chest', Euler((fs_spine * math.radians(lean0 * 0.25), ts_chest * math.radians(turn0), 0)))
+    update()
+    best_pole_angle(c_r, 'lowerarm.r', lambda e: e.z - 0.4 * (-e.x))   # elbows low and out
+    best_pole_angle(c_l, 'lowerarm.l', lambda e: e.z - 0.4 * e.x)
+    for (f, r, l, turn, lean, head) in RUM_KEYS:
+        tgt_r.location = Vector(r)
+        tgt_r.keyframe_insert('location', frame=f)
+        tgt_l.location = Vector(l)
+        tgt_l.keyframe_insert('location', frame=f)
+        key_rot('spine', Euler((fs_spine * math.radians(lean * 0.75), 0, 0)))
+        key_rot('chest', Euler((fs_spine * math.radians(lean * 0.25), ts_chest * math.radians(turn), 0)))
+        key_rot('head', Euler((fs_head * math.radians(head), 0, 0)))
+        for b in ('spine', 'chest', 'head'):
+            PB[b].keyframe_insert('rotation_quaternion', frame=f)
+        PB['hips'].location = down
+        PB['hips'].keyframe_insert('location', frame=f)
+    for obj in (tgt_r, tgt_l, arm):
+        ad = obj.animation_data
+        if not ad or not ad.action:
+            continue
+        for fc in getattr(ad.action, 'fcurves', []):
+            for kp in fc.keyframe_points:
+                kp.interpolation = 'BEZIER'
+                kp.handle_left_type = 'AUTO_CLAMPED'
+                kp.handle_right_type = 'AUTO_CLAMPED'
+    return bake('Rummage', FRAMES, [tgt_fl, pole_fl, tgt_fr, pole_fr, aim_fr, tgt_r, tgt_l, pole_r, pole_l])
+
+
 stir = make_stirring()
 net = make_netcast()
+rum = make_rummage()
+
+# check the baked Rummage: the right knee on the ground, the left foot flat ahead, nothing far below the ground, the hands low in front
+arm.animation_data.action = rum
+for f in (1, 15, 22, 36):
+    scene.frame_set(f)
+    update()
+    pt = lambda b, t=False: tuple(round(v, 3) for v in world(PB[b], t))
+    log('Rummage frame', f, 'knee r', pt('lowerleg.r'), 'knee l', pt('lowerleg.l'), 'ankle l', pt('foot.l'), 'toes r', pt('toes.r', True),
+        'hips', pt('hips'), 'hand r', pt('wrist.r', True), 'hand l', pt('wrist.l', True), 'head', pt('head', True))
+arm.animation_data.action = None
 
 # check the baked NetCast hand path: out at the release, in at the haul, up at the lift
 arm.animation_data.action = net
@@ -291,7 +382,7 @@ arm.animation_data.action = None
 ad = arm.animation_data
 for tr in list(ad.nla_tracks):
     ad.nla_tracks.remove(tr)
-for action in (stir, net):
+for action in (stir, net, rum):
     tr = ad.nla_tracks.new()
     tr.name = action.name
     st = tr.strips.new(action.name, int(action.frame_range[0]), action)
