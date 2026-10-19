@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "game-models",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:\\Projects\\game-models\\tools\\serve.mjs",
+        "5182",
+        "--no-open"
+      ],
+      "port": 5182
+    }
+  ]
+}
