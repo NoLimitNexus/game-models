@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polyfork Test</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #14171c; color: #e6e8eb; font: 14px system-ui, sans-serif; overflow: hidden; }
+  #bar { position: fixed; top: 0; left: 0; right: 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+         padding: 8px 12px; background: rgba(20,23,28,.88); border-bottom: 1px solid #2a2f37; z-index: 2; }
+  #bar b { margin-right: 6px; }
+  button, select { background: #232830; color: #e6e8eb; border: 1px solid #3a414c; border-radius: 6px; padding: 6px 10px; font: inherit; }
+  button.on { border-color: #7fb37f; color: #bfe3bf; }
+  #status { margin-left: auto; color: #9aa3ad; }
+  #tip { position: fixed; pointer-events: none; padding: 4px 8px; background: #000c; border-radius: 4px; display: none; z-index: 3; }
+  canvas { display: block; }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://unpkg.com/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.180.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="bar">
+  <b>Polyfork test</b>
+  <button id="modeVillage" class="on">Village scene</button>
+  <button id="modeKit">Look at a whole kit</button>
+  <select id="kit" style="display:none"></select>
+  <span id="status">loading...</span>
+</div>
+<div id="tip"></div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const CDN = 'https://polyfork.dev/cdn/';
+const API = 'https://polyfork.dev/api/';
+const status = document.getElementById('status');
+const tip = document.getElementById('tip');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9cc4e4);
+scene.fog = new THREE.Fog(0x9cc4e4, 90, 220);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 500);
+camera.position.set(34, 26, 40);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 2, 0);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xdfefff, 0x5a6a3a, 1.4));
+const sun = new THREE.DirectionalLight(0xfff2dc, 2.2);
+sun.position.set(30, 50, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 150 });
+scene.add(sun);
+const ground = new THREE.Mesh(new THREE.CircleGeometry(120, 64).rotateX(-Math.PI / 2),
+  new THREE.MeshLambertMaterial({ color: 0x6f9a4a }));
+ground.receiveShadow = true;
+scene.add(ground);
+
+function resize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+let world = new THREE.Group();
+scene.add(world);
+let tickers = [];
+let loadToken = 0;
+
+async function load(id) {
+  const mod = await import(CDN + id + '.mjs');
+  const obj = mod.createAsset();
+  obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  obj.userData.name = id.replace(/-[0-9a-f]{6}$/, '').replace(/-base$/, '').replace(/-/g, ' ');
+  return { obj, mod };
+}
+
+function clear() {
+  loadToken++;
+  scene.remove(world);
+  world = new THREE.Group();
+  scene.add(world);
+  tickers = [];
+}
+
+// Village: one kit, laid out by hand, plus a walking villager, a fox that plants its feet, and boats.
+const VILLAGE = [
+  ['thatched-cottage-0e63f5', -14, -10, 0.4], ['two-story-house-40f6dc', 0, -16, 0], ['village-tavern-4e94e3', 16, -10, -0.4],
+  ['windmill-3aad49', -30, 6, 0.8], ['timber-barn-90b3ce', 26, 10, -1.2], ['stone-chapel-03e774', 0, -36, 0],
+  ['village-well-f8e361', 0, 0, 0], ['orchard-apple-tree-b21f85', -8, 10, 0], ['orchard-apple-tree-b21f85', -14, 16, 1],
+  ['wooden-cart-bf83d8', 8, 6, 0.6], ['water-trough-318ee1', 12, 2, 0], ['signpost-8287c3', -4, 4, 0.3],
+  ['wooden-crate-b9c96a', 18, -2, 0.2], ['village-chicken-9ba715', 4, 8, 2], ['draft-horse-519160', 20, 4, 1.4],
+  ['watchtower-140f78', -34, -24, 0], ['clay-bread-oven-860b06', 22, -20, 0],
+];
+
+async function showVillage() {
+  clear();
+  const token = loadToken;
+  scene.background.set(0x9cc4e4);
+  scene.fog = new THREE.Fog(0x9cc4e4, 90, 220);
+  ground.visible = true;
+  controls.target.set(0, 2, -4);
+  camera.position.set(34, 26, 40);
+  let done = 0;
+  const total = VILLAGE.length + 3;
+  const step = () => { status.textContent = `loaded ${++done} of ${total} straight from Polyfork's site`; };
+  await Promise.all(VILLAGE.map(async ([id, x, z, ry]) => {
+    try {
+      const { obj } = await load(id);
+      if (token !== loadToken) return;
+      obj.position.set(x, 0, z);
+      obj.rotation.y = ry;
+      world.add(obj);
+    } catch (e) { console.warn(id, e); }
+    step();
+  }));
+
+  // Villager with Polyfork's free walk clips, going round the well.
+  try {
+    const { obj } = await load('villager-40255c');
+    const { animate } = await import(CDN + 'clips.mjs');
+    if (token !== loadToken) return;
+    world.add(obj);
+    const anim = await animate(obj);
+    anim.locomotion(1.4);
+    let a = 0;
+    tickers.push(dt => {
+      a += dt * 1.4 / 7;
+      obj.position.set(Math.cos(a) * 7, 0, Math.sin(a) * 7);
+      obj.rotation.y = -a;
+      anim.update(dt);
+    });
+  } catch (e) { console.warn('villager', e); }
+  step();
+
+  // Fox: legs solve against the ground, feet stay planted.
+  try {
+    const { obj } = await load('fox-base');
+    const { walker, raycastGround } = await import(CDN + 'walk.mjs');
+    if (token !== loadToken) return;
+    world.add(obj);
+    const gait = walker(obj, { ground: raycastGround([ground]) });
+    let dist = 0;
+    tickers.push(dt => {
+      dist += dt * 2.2;
+      const a = dist / 13;
+      obj.position.set(Math.cos(a) * 13, 0, 6 + Math.sin(a) * 13);
+      obj.rotation.y = -a;
+      gait.poseAt(dist);
+    });
+  } catch (e) { console.warn('fox', e); }
+  step();
+
+  // A boat on a pond, for the sea games.
+  try {
+    const pond = new THREE.Mesh(new THREE.CircleGeometry(16, 48).rotateX(-Math.PI / 2),
+      new THREE.MeshLambertMaterial({ color: 0x3d7fa8 }));
+    pond.position.set(34, 0.05, -30);
+    world.add(pond);
+    const { obj } = await load('pirate-sloop-d8ead0');
+    if (token !== loadToken) return;
+    obj.position.set(34, 0, -30);
+    world.add(obj);
+    let t = 0;
+    tickers.push(dt => { t += dt; obj.rotation.z = Math.sin(t * 0.9) * 0.04; obj.position.y = Math.sin(t * 1.3) * 0.15; });
+  } catch (e) { console.warn('sloop', e); }
+  step();
+}
+
+// Whole kit: every model in the kit on a grid, names on hover.
+async function showKit(kitId) {
+  clear();
+  const token = loadToken;
+  scene.background.set(0x2a2f37);
+  scene.fog = null;
+  ground.visible = false;
+  status.textContent = 'reading the kit...';
+  const rows = [];
+  for (let page = 1; page < 6; page++) {
+    const r = await (await fetch(`${API}assets?kit=${kitId}&limit=50&page=${page}`)).json();
+    rows.push(...r.assets);
+    if (rows.length >= r.total || !r.assets.length) break;
+  }
+  if (token !== loadToken) return;
+  const cols = Math.ceil(Math.sqrt(rows.length));
+  const gap = 12;
+  let done = 0;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(cols * gap + gap, Math.ceil(rows.length / cols) * gap + gap).rotateX(-Math.PI / 2),
+    new THREE.MeshLambertMaterial({ color: 0x3a414c }));
+  floor.receiveShadow = true;
+  world.add(floor);
+  const half = (cols - 1) * gap / 2;
+  controls.target.set(0, 1, 0);
+  camera.position.set(0, cols * gap * 0.95, cols * gap * 1.05);
+  await Promise.all(rows.map(async (row, i) => {
+    try {
+      const { obj } = await load(row.id);
+      if (token !== loadToken) return;
+      // even out sizes so a coin and a ship are both easy to see (real size is in the village scene)
+      const size = new THREE.Box3().setFromObject(obj).getSize(new THREE.Vector3());
+      const big = Math.max(size.x, size.y, size.z);
+      if (big > 0) obj.scale.multiplyScalar(gap * 0.7 / big);
+      obj.position.set((i % cols) * gap - half, 0, Math.floor(i / cols) * gap - half);
+      obj.userData.name = row.title || obj.userData.name;
+      obj.userData.tris = row.triangles;
+      world.add(obj);
+    } catch (e) { console.warn(row.id, e); }
+    status.textContent = `${++done} of ${rows.length} models in this kit`;
+  }));
+}
+
+// Hover names
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+renderer.domElement.addEventListener('pointermove', e => {
+  mouse.set(e.clientX / innerWidth * 2 - 1, -e.clientY / innerHeight * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObjects(world.children, true)[0];
+  let o = hit && hit.object;
+  while (o && !o.userData.name) o = o.parent;
+  if (o) {
+    tip.style.display = 'block';
+    tip.style.left = e.clientX + 14 + 'px';
+    tip.style.top = e.clientY + 10 + 'px';
+    tip.textContent = o.userData.name + (o.userData.tris ? ` (${o.userData.tris} triangles)` : '');
+  } else tip.style.display = 'none';
+});
+
+// Controls
+const kitSel = document.getElementById('kit');
+const bVillage = document.getElementById('modeVillage');
+const bKit = document.getElementById('modeKit');
+bVillage.onclick = () => { bVillage.classList.add('on'); bKit.classList.remove('on'); kitSel.style.display = 'none'; showVillage(); };
+bKit.onclick = () => { bKit.classList.add('on'); bVillage.classList.remove('on'); kitSel.style.display = ''; showKit(kitSel.value); };
+kitSel.onchange = () => showKit(kitSel.value);
+fetch(API + 'kits').then(r => r.json()).then(d => {
+  for (const k of (d.kits || d)) {
+    const opt = document.createElement('option');
+    opt.value = k.id;
+    opt.textContent = (k.title || k.name || k.id) + (k.count ? ` (${k.count})` : '');
+    kitSel.appendChild(opt);
+  }
+  kitSel.value = 'pirate-cove-2ebea4';
+});
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  for (const t of tickers) t(dt);
+  controls.update();
+  renderer.render(scene, camera);
+});
+showVillage();
+</script>
+</body>
+</html>
