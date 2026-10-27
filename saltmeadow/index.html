@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saltmeadow</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #0b1020; color: #eef1f4; font: 14px system-ui, sans-serif; overflow: hidden; }
+  canvas { display: block; }
+  #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.45) 100%); }
+  #top { position: fixed; top: 10px; right: 12px; display: flex; gap: 6px; align-items: center; z-index: 3; flex-wrap: wrap; justify-content: flex-end; }
+  #clock { font-weight: 600; padding: 6px 10px; background: #0009; border-radius: 8px; min-width: 150px; text-align: center; }
+  #top button { background: #0009; color: #eef1f4; border: 1px solid #fff3; border-radius: 8px; padding: 6px 10px; font: inherit; cursor: pointer; }
+  #top button.on { border-color: #ffd27a; color: #ffd27a; }
+  #title { position: fixed; top: 10px; left: 14px; font: 600 22px Georgia, serif; letter-spacing: .6px; text-shadow: 0 2px 8px #000c; z-index: 3; }
+  #caption { position: fixed; left: 18px; bottom: 20px; max-width: min(680px, 80vw); font: 500 21px Georgia, serif; text-shadow: 0 2px 10px #000; z-index: 3; transition: opacity .25s; }
+  #caption small { display: block; font: 13px system-ui, sans-serif; opacity: .75; margin-bottom: 3px; letter-spacing: .4px; text-transform: uppercase; }
+  #log { position: fixed; right: 12px; bottom: 16px; width: min(330px, 44vw); z-index: 3; font-size: 13px; }
+  #log div { background: #000a; padding: 5px 9px; border-radius: 7px; margin-top: 5px; transition: opacity 1s; backdrop-filter: blur(3px); }
+  #log b { color: #ffd27a; font-weight: 600; margin-right: 6px; }
+  #bubbles { position: fixed; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
+  .bubble { position: absolute; transform: translate(-50%, -100%); background: #fffdf5; color: #222; font: 600 14px system-ui, sans-serif; padding: 5px 10px;
+            border-radius: 12px; white-space: nowrap; box-shadow: 0 3px 10px #0006; display: none; }
+  .bubble::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: #fffdf5; }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: #0b1020; z-index: 5; font: 19px Georgia, serif; transition: opacity 1s; text-align: center; }
+  #loading .bar { width: 280px; height: 6px; background: #ffffff22; border-radius: 3px; margin: 12px auto 0; overflow: hidden; }
+  #loading .bar i { display: block; height: 100%; width: 0; background: #ffd27a; transition: width .2s; }
+  #loading small { display: block; font: 13px system-ui, sans-serif; opacity: .6; margin-top: 10px; }
+  @media (max-width: 600px) { #caption { font-size: 16px; } #log { display: none; } #title { font-size: 16px; } }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://unpkg.com/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.180.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="loading"><div><div id="loadText">Building Saltmeadow...</div><div class="bar"><i id="loadBar"></i></div><small>Low-poly models by Polyfork</small></div></div>
+<div id="vignette"></div>
+<div id="bubbles"></div>
+<div id="title">Saltmeadow</div>
+<div id="top">
+  <span id="clock">Day 1 · 3:00 pm</span>
+  <button data-speed="1" class="on">1x</button>
+  <button data-speed="3">3x</button>
+  <button data-speed="10">10x</button>
+  <button id="nextBtn">Next shot</button>
+  <button id="camBtn" class="on">Auto camera</button>
+</div>
+<div id="caption"></div>
+<div id="log"></div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
